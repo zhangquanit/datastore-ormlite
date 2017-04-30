@@ -1,15 +1,17 @@
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 25
     buildToolsVersion "25.0.2"
+
     defaultConfig {
-        applicationId "com.ormlite.android.demo"
         minSdkVersion 15
         targetSdkVersion 25
         versionCode 1
         versionName "1.0"
+
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
     }
     buildTypes {
         release {
@@ -21,7 +23,6 @@ android {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile project(':ormlite-android')
-//        compile 'com.j256.ormlite:ormlite-android:5.0'
-    debugCompile 'com.amitshekhar.android:debug-db:1.0.0'
+    compile project(':ormlite-core')
+    compile 'com.android.support:support-v4:25.0.1'
 }

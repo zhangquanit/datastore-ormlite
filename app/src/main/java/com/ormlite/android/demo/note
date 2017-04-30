@@ -7,5 +7,92 @@ debugCompile 'com.amitshekhar.android:debug-db:1.0.0'
 D/DebugDB: Open http://XXX.XXX.X.XXX:8080 in your browser
 把地址复制到浏览器，就会看到Database
 
+原理剖析
+
+浏览器<------HTTP协议----->手机端ServerSocket
+1、开启Server
+在Manifest.xml中注册ContentProvider，应用启动的时候会调用ContentProvider的onCreate()开启Server
+        public class DebugDBInitProvider extends ContentProvider {
+            public DebugDBInitProvider() {
+            }
+
+            @Override
+            public boolean onCreate() {
+                //开启Server
+                DebugDB.initialize(getContext());
+                return true;
+            }
+        }
+
+        //手机与PC处于同一个wifi,默认端口为8080，也可以在build.gradle中配置PORT
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        int ipAddress = wifiManager.getConnectionInfo().getIpAddress();
+        final String formatedIpAddress = String.format("%d.%d.%d.%d", (ipAddress & 0xff), (ipAddress >> 8 & 0xff), (ipAddress >> 16 & 0xff), (ipAddress >> 24 & 0xff));
+        链接地址为：http://formatedIpAddress:port
+
+2、打开浏览器，发送指令，服务器端收到指令，做响应处理
+1）查询所有的数据库
+        String[] databaseNames=context.databaseList()；
+        for (String databaseName : databaseNames) {
+            databaseFiles.put(databaseName, context.getDatabasePath(databaseName)); //获取db文件
+        }
+2）查询所有的SharePreference
+        ArrayList<String> tags = new ArrayList<>();
+
+        String rootPath = context.getApplicationInfo().dataDir + "/shared_prefs"; //SP根路径
+        File root = new File(rootPath);
+        if (root.exists()) {
+            for (File file : root.listFiles()) {
+                String fileName = file.getName();
+                if (fileName.endsWith(".xml")) {
+                    tags.add(fileName.substring(0, fileName.length() - ".xml".length()));
+                }
+            }
+        }
+
+3)查询某个数据库中有哪些表
+SELECT name FROM sqlite_master WHERE type='table'
+
+        String dbName="";
+        SQLiteDatabase database = mContext.openOrCreateDatabase(dbName, 0, null);
+        Cursor c = database.rawQuery("SELECT name FROM sqlite_master WHERE type='table'", null);
+        if (c.moveToFirst()) {
+            while (!c.isAfterLast()) {
+                String tabname=c.getString(0);
+                c.moveToNext();
+            }
+        }
+4）查询某个SP中的所有数据
+        SharedPreferences preferences = context.getSharedPreferences(tag, Context.MODE_PRIVATE);
+        Map<String, ?> allEntries = preferences.getAll();
+        for (Map.Entry<String, ?> entry : allEntries.entrySet()) {
+            String key=entry.getKey();
+            Object value=entry.getValue();
+            if (value != null) {
+                if (value instanceof String) {
+
+                } else if (value instanceof Integer) {
+
+                } else if (value instanceof Long) {
+
+                } else if (value instanceof Float) {
+
+                } else if (value instanceof Boolean) {
+
+                } else if (value instanceof Set) {
+
+                }
+            } else {
+
+            }
+
+        }
+5)查询表中的所有数据
+            String sql = "SELECT * FROM " + tableName;
+            cursor = db.rawQuery(sql, null);
+
+6）修改表中数据、SP中的数据
+7）删除表中的数据、SP中的数据
+
 二、Ormlite-Android
 
